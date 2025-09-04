@@ -8,7 +8,10 @@ import {
 } from "discord.js";
 import fs from "fs";
 import "dotenv/config";
+import express from "express";
+import fetch from "node-fetch"; // if your Node version doesn't have fetch
 
+// ------------------- Discord Bot -------------------
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -20,6 +23,7 @@ const client = new Client({
 });
 
 const TOKEN = process.env.DISCORD_TOK;
+const ROLE_LOG_CHANNEL = process.env.ROLE_LOG_CHANNEL || null;
 
 // Load roles.json globally
 let rolesData = [];
@@ -57,7 +61,7 @@ async function createRoleQueueConcurrent(guild, rolesData, concurrency = 3) {
               const primaryColor = parseInt(color.replace("#", ""), 16);
               role = await guild.roles.create({
                 name,
-                colors: { primaryColor },
+                color: primaryColor,
               });
               console.log(`✅ Created role: ${name}`);
               createdRoles.push(role);
@@ -89,7 +93,8 @@ async function createRoleQueueConcurrent(guild, rolesData, concurrency = 3) {
   return createdRoles;
 }
 
-client.once("clintReady", () => {
+// ------------------- Bot Events -------------------
+client.once("ready", () => {
   console.log(`✅ Logged in as ${client.user.tag}`);
 });
 
@@ -195,7 +200,7 @@ client.on("messageCreate", async (message) => {
   }
 });
 
-// ---- Handle menu interactions ----
+// ---- Handle menu interactions with logging ----
 client.on("interactionCreate", async (interaction) => {
   if (!interaction.isStringSelectMenu()) return;
   if (!interaction.customId.startsWith("colorRoles_")) return;
@@ -214,14 +219,30 @@ client.on("interactionCreate", async (interaction) => {
 
   if (interaction.values.length > 0) {
     const newRoleId = interaction.values[0];
+    const roleName = guild.roles.cache.get(newRoleId).name;
     await member.roles.add(newRoleId);
+
+    console.log(
+      `📌 Role Change: ${member.user.tag} was given the role "${roleName}"`
+    );
+
+    if (ROLE_LOG_CHANNEL) {
+      const logChannel = guild.channels.cache.get(ROLE_LOG_CHANNEL);
+      logChannel?.send(`📌 ${member.user.tag} got the **${roleName}** role`);
+    }
+
     return interaction.reply({
-      content: `✅ You now have the **${
-        guild.roles.cache.get(newRoleId).name
-      }** role!`,
+      content: `✅ You now have the **${roleName}** role!`,
       ephemeral: true,
     });
   } else {
+    console.log(`📌 Role Change: ${member.user.tag} removed their color role`);
+
+    if (ROLE_LOG_CHANNEL) {
+      const logChannel = guild.channels.cache.get(ROLE_LOG_CHANNEL);
+      logChannel?.send(`📌 ${member.user.tag} removed their color role`);
+    }
+
     return interaction.reply({
       content: "🗑️ Removed your color role.",
       ephemeral: true,
@@ -229,4 +250,22 @@ client.on("interactionCreate", async (interaction) => {
   }
 });
 
+// ------------------- Keep Alive -------------------
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+app.get("/", (req, res) => res.send("Bot is alive ✅"));
+
+app.listen(PORT, () => {
+  console.log(`💡 Keep-alive server running on port ${PORT}`);
+});
+
+// Ping itself every 5 minutes to stay awake
+setInterval(() => {
+  fetch(`http://localhost:${PORT}`)
+    .then(() => console.log("💓 Self-ping successful"))
+    .catch((err) => console.error("❌ Self-ping failed:", err));
+}, 5 * 60 * 1000);
+
+// ------------------- Login -------------------
 client.login(TOKEN);
