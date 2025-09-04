@@ -1,0 +1,12 @@
+name = "discord-bot"
+environment = "production"
+
+[build]
+builder = "heroku/buildpacks:20"
+start = "node bot.js"
+
+[build.environment]
+NODE_VERSION = "22.18.0"
+
+[deploy]
+platform = "linux"
