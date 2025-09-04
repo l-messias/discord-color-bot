@@ -105,7 +105,7 @@ client.on("messageCreate", async (message) => {
   ) {
     return message.reply({
       content: "❌ You need administrator permissions to use this.",
-      ephemeral: true,
+      flags: 64, // ephemeral
     });
   }
 
@@ -118,7 +118,7 @@ client.on("messageCreate", async (message) => {
     const createdRoles = await createRoleQueueConcurrent(guild, rolesData, 5);
     await message.reply({
       content: `✅ Added/verified **${createdRoles.length}** roles from \`roles.json\`.`,
-      ephemeral: true,
+      flags: 64, // ephemeral
     });
   }
 
@@ -138,7 +138,7 @@ client.on("messageCreate", async (message) => {
         removedRoles.length > 0
           ? `🗑️ Removed **${removedRoles.length}** roles from \`roles.json\`.`
           : "⚠️ No matching roles were found to remove.",
-      ephemeral: true,
+      flags: 64, // ephemeral
     });
   }
 
@@ -148,7 +148,7 @@ client.on("messageCreate", async (message) => {
     if (!channelId)
       return message.reply({
         content: "❌ Please provide a channel ID.",
-        ephemeral: true,
+        flags: 64, // ephemeral
       });
 
     const targetChannel = await message.guild.channels
@@ -157,7 +157,7 @@ client.on("messageCreate", async (message) => {
     if (!targetChannel)
       return message.reply({
         content: "❌ Invalid channel ID.",
-        ephemeral: true,
+        flags: 64, // ephemeral
       });
 
     const guildRoles = guild.roles.cache;
@@ -195,7 +195,7 @@ client.on("messageCreate", async (message) => {
 
     await message.reply({
       content: `✅ Dropdown menus created in <#${channelId}>`,
-      ephemeral: true,
+      flags: 64, // ephemeral
     });
   }
 });
@@ -230,12 +230,12 @@ client.on("interactionCreate", async (interaction) => {
       if (!interaction.replied && !interaction.deferred) {
         await interaction.reply({
           content: `✅ You now have the **${roleName}** role!`,
-          ephemeral: true,
+          flags: 64, // ephemeral
         });
       } else {
         await interaction.followUp({
           content: `✅ You now have the **${roleName}** role!`,
-          ephemeral: true,
+          flags: 64, // ephemeral
         });
       }
     } else {
@@ -246,12 +246,12 @@ client.on("interactionCreate", async (interaction) => {
       if (!interaction.replied && !interaction.deferred) {
         await interaction.reply({
           content: "🗑️ Removed your color role.",
-          ephemeral: true,
+          flags: 64, // ephemeral
         });
       } else {
         await interaction.followUp({
           content: "🗑️ Removed your color role.",
-          ephemeral: true,
+          flags: 64, // ephemeral
         });
       }
     }
@@ -266,7 +266,7 @@ const PORT = process.env.PORT || 3000;
 
 app.get("/", (req, res) => res.send("Bot is alive ✅"));
 
-app.listen(PORT, () => {
+app.listen(PORT, "0.0.0.0", () => {
   console.log(`💡 Keep-alive server running on port ${PORT}`);
 });
 
