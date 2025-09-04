@@ -200,7 +200,7 @@ client.on("messageCreate", async (message) => {
   }
 });
 
-// ---- Handle menu interactions with logging ----
+// ---- Handle menu interactions with proper reply handling ----
 client.on("interactionCreate", async (interaction) => {
   if (!interaction.isStringSelectMenu()) return;
   if (!interaction.customId.startsWith("colorRoles_")) return;
@@ -217,36 +217,46 @@ client.on("interactionCreate", async (interaction) => {
     if (member.roles.cache.has(roleId)) await member.roles.remove(roleId);
   }
 
-  if (interaction.values.length > 0) {
-    const newRoleId = interaction.values[0];
-    const roleName = guild.roles.cache.get(newRoleId).name;
-    await member.roles.add(newRoleId);
+  try {
+    if (interaction.values.length > 0) {
+      const newRoleId = interaction.values[0];
+      const roleName = guild.roles.cache.get(newRoleId).name;
+      await member.roles.add(newRoleId);
 
-    console.log(
-      `📌 Role Change: ${member.user.tag} was given the role "${roleName}"`
-    );
+      console.log(
+        `📌 Role Change: ${member.user.tag} was given the role "${roleName}"`
+      );
 
-    if (ROLE_LOG_CHANNEL) {
-      const logChannel = guild.channels.cache.get(ROLE_LOG_CHANNEL);
-      logChannel?.send(`📌 ${member.user.tag} got the **${roleName}** role`);
+      if (!interaction.replied && !interaction.deferred) {
+        await interaction.reply({
+          content: `✅ You now have the **${roleName}** role!`,
+          ephemeral: true,
+        });
+      } else {
+        await interaction.followUp({
+          content: `✅ You now have the **${roleName}** role!`,
+          ephemeral: true,
+        });
+      }
+    } else {
+      console.log(
+        `📌 Role Change: ${member.user.tag} removed their color role`
+      );
+
+      if (!interaction.replied && !interaction.deferred) {
+        await interaction.reply({
+          content: "🗑️ Removed your color role.",
+          ephemeral: true,
+        });
+      } else {
+        await interaction.followUp({
+          content: "🗑️ Removed your color role.",
+          ephemeral: true,
+        });
+      }
     }
-
-    return interaction.reply({
-      content: `✅ You now have the **${roleName}** role!`,
-      ephemeral: true,
-    });
-  } else {
-    console.log(`📌 Role Change: ${member.user.tag} removed their color role`);
-
-    if (ROLE_LOG_CHANNEL) {
-      const logChannel = guild.channels.cache.get(ROLE_LOG_CHANNEL);
-      logChannel?.send(`📌 ${member.user.tag} removed their color role`);
-    }
-
-    return interaction.reply({
-      content: "🗑️ Removed your color role.",
-      ephemeral: true,
-    });
+  } catch (err) {
+    console.error("❌ Interaction error:", err);
   }
 });
 
